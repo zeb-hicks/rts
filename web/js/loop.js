@@ -7,7 +7,7 @@ function loop() {
 	dt = performance.now() - pt;
 	pt += dt;
 
-	updateWorld(dt);
+	world.update(dt);
 
 	draw(dt);
 	frame++;

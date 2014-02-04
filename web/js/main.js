@@ -17,16 +17,15 @@ function imports(js) {
 // Brute force import load checking.
 var icheck = setInterval(function() {
 	var ii = 0;
-	var is = 0;
+	var ic = 0;
 	for (var a in importlist) {
-		is++;
 		ii++;
 		if (importlist[a]) {
 			delete importlist[a] == true;
-			ii--;
+			ic++;
 		}
 	}
-	if (ii == 0) {
+	if (ic > 0 && ic == ii) {
 		clearInterval(icheck);
 		init();
 	}
@@ -51,7 +50,12 @@ imports('planet.js');
 imports('game.js');
 
 function init() {
+	// GL Setup
 	drawSetup();
+	// Game Setup
 	gameSetup();
+	// World Setup
+	worldSetup();
+	// Start game loop.
 	requestAnimationFrame(loop);
 }
