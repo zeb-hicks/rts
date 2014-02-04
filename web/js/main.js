@@ -41,7 +41,6 @@ function loadFile(f) {
 }
 
 imports('lib/glowcore.js');
-imports('lib/glowmath.js');
 imports('lib/glowexts.js');
 
 imports('loop.js');

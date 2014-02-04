@@ -14,7 +14,7 @@ function Planet(o) {
 
 	// Generate any other data we may need in advance
 }
-Planet.prototype = Object.create(THREE.Object3D.prototype);
+Planet.prototype = Object.create(GLOW.Node.prototype);
 
 // Calculate point on planet surface from cube coordinates.
 function PlanetPoint(radius, detail, side, depth, x, y) {
