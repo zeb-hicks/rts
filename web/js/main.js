@@ -50,12 +50,12 @@ imports('planet.js');
 imports('game.js');
 
 function init() {
-	// GL Setup
-	drawSetup();
 	// Game Setup
 	gameSetup();
 	// World Setup
 	worldSetup();
+	// GL Setup
+	drawSetup();
 	// Start game loop.
 	requestAnimationFrame(loop);
 }

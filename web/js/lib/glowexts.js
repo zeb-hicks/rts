@@ -1549,10 +1549,10 @@ GLOW.Geometry.Cube = {
 
         // front
 
-        a[ i++ ] = -size; a[ i++ ] = +size; a[ i++ ] = +size; 
-        a[ i++ ] = -size; a[ i++ ] = -size; a[ i++ ] = +size; 
-        a[ i++ ] = +size; a[ i++ ] = -size; a[ i++ ] = +size; 
-        a[ i++ ] = +size; a[ i++ ] = +size; a[ i++ ] = +size; 
+        a[ i++ ] = -size; a[ i++ ] = +size; a[ i++ ] = +size;
+        a[ i++ ] = -size; a[ i++ ] = -size; a[ i++ ] = +size;
+        a[ i++ ] = +size; a[ i++ ] = -size; a[ i++ ] = +size;
+        a[ i++ ] = +size; a[ i++ ] = +size; a[ i++ ] = +size;
 
         // back
 
@@ -1658,6 +1658,57 @@ GLOW.Geometry.Cube = {
         a[ i++ ] = 0; a[ i++ ] = 0;
 
         return a;
+    },
+
+    bary: function() {
+
+        var a = new Uint16Array( 6 * 4 * 3 );
+        var i = 0;
+
+        // front
+
+        a[ i++ ] = 1; a[ i++ ] = 0; a[ i++ ] = 0;
+        a[ i++ ] = 0; a[ i++ ] = 1; a[ i++ ] = 0;
+        a[ i++ ] = 0; a[ i++ ] = 0; a[ i++ ] = 1;
+        a[ i++ ] = 0; a[ i++ ] = 1; a[ i++ ] = 0;
+
+        // back
+
+        a[ i++ ] = 1; a[ i++ ] = 0; a[ i++ ] = 0;
+        a[ i++ ] = 0; a[ i++ ] = 1; a[ i++ ] = 0;
+        a[ i++ ] = 0; a[ i++ ] = 0; a[ i++ ] = 1;
+        a[ i++ ] = 0; a[ i++ ] = 1; a[ i++ ] = 0;
+
+        // left
+
+        a[ i++ ] = 1; a[ i++ ] = 0; a[ i++ ] = 0;
+        a[ i++ ] = 0; a[ i++ ] = 1; a[ i++ ] = 0;
+        a[ i++ ] = 0; a[ i++ ] = 0; a[ i++ ] = 1;
+        a[ i++ ] = 0; a[ i++ ] = 1; a[ i++ ] = 0;
+
+        // right
+
+        a[ i++ ] = 1; a[ i++ ] = 0; a[ i++ ] = 0;
+        a[ i++ ] = 0; a[ i++ ] = 1; a[ i++ ] = 0;
+        a[ i++ ] = 0; a[ i++ ] = 0; a[ i++ ] = 1;
+        a[ i++ ] = 0; a[ i++ ] = 1; a[ i++ ] = 0;
+
+        // up
+
+        a[ i++ ] = 1; a[ i++ ] = 0; a[ i++ ] = 0;
+        a[ i++ ] = 0; a[ i++ ] = 1; a[ i++ ] = 0;
+        a[ i++ ] = 0; a[ i++ ] = 0; a[ i++ ] = 1;
+        a[ i++ ] = 0; a[ i++ ] = 1; a[ i++ ] = 0;
+
+        // down
+
+        a[ i++ ] = 1; a[ i++ ] = 0; a[ i++ ] = 0;
+        a[ i++ ] = 0; a[ i++ ] = 1; a[ i++ ] = 0;
+        a[ i++ ] = 0; a[ i++ ] = 0; a[ i++ ] = 1;
+        a[ i++ ] = 0; a[ i++ ] = 1; a[ i++ ] = 0;
+
+        return a;
+
     },
     
     normals: function() {
@@ -1896,7 +1947,7 @@ GLOW.Node = function( shader ) {
 * Prototype
 */ 
 
-GLOW.Node.prototype.update = function( parentGlobalMatrix, cameraInverseMatrix ) {
+GLOW.Node.prototype.update = function( dt, parentGlobalMatrix, cameraInverseMatrix ) {
     
     if( this.useXYZStyleTransform ) {
         this.localMatrix.setPosition( this.position.x, this.position.y, this.position.z );
@@ -1920,7 +1971,7 @@ GLOW.Node.prototype.update = function( parentGlobalMatrix, cameraInverseMatrix )
     
     var c, cl = this.children.length;
     for( c = 0; c < cl; c++ ) {
-        this.children[ c ].update( this.globalMatrix, cameraInverseMatrix );
+        if (this.children[c].update !== undefined) this.children[ c ].update( dt, this.globalMatrix, cameraInverseMatrix );
     }
     
     return this;
@@ -1990,7 +2041,7 @@ GLOW.Camera.prototype = new GLOW.Node();
 GLOW.Camera.prototype.constructor = GLOW.Camera;
 GLOW.Camera.prototype.supr = GLOW.Node.prototype;
 
-GLOW.Camera.prototype.update = function( parentGlobalMatrix, cameraInverseMatrix ) {
+GLOW.Camera.prototype.update = function( dt, parentGlobalMatrix, cameraInverseMatrix ) {
 
     if( this.useXYZStyleTransform ) {
         this.localMatrix.setPosition( this.position.x, this.position.y, this.position.z );
@@ -2017,7 +2068,7 @@ GLOW.Camera.prototype.update = function( parentGlobalMatrix, cameraInverseMatrix
     var c, cl = this.children.length;
 
     for( c = 0; c < cl; c++ ) {
-        this.children[ c ].update( this.globalMatrix, cameraInverseMatrix );
+        this.children[ c ].update( dt, this.globalMatrix, cameraInverseMatrix );
     }
 };
 

@@ -6,6 +6,7 @@ function loop() {
 	requestAnimationFrame(loop);
 	dt = performance.now() - pt;
 	pt += dt;
+	dt /= 1000;
 
 	world.update(dt);
 

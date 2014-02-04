@@ -10,7 +10,7 @@ function worldSetup() {
 
 	world.update = function(dt) {
 		for (var s in world.space) {
-			world.space[s].update();
+			world.space[s].update(dt);
 		}
 	};
 }
