@@ -7,6 +7,7 @@ attribute vec3 normals;
 attribute vec2 uvs;
 attribute vec3 bary;
 
+varying vec3 worldpos;
 varying vec3 normal;
 varying vec2 uv;
 varying vec3 bc;
@@ -15,5 +16,6 @@ void main() {
 	uv = uvs;
 	normal = normalize(mat3(transform[0].xyz, transform[1].xyz, transform[2].xyz) * normals);
 	bc = bary;
+	worldpos = (transform * vec4(vertices, 1.0)).xyz;
 	gl_Position = cameraProjection * cameraInverse * transform * vec4(vertices, 1.0);
 }

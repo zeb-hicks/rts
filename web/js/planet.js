@@ -19,6 +19,17 @@ function Planet(o) {
 		new PlanetChunk(this, i++)
 	];
 
+	this.shader = {
+		transform: new GLOW.Matrix4(),
+		cameraInverse: GLOW.defaultCamera.inverse,
+		cameraProjection: GLOW.defaultCamera.projection,
+
+		tDiffuse: new GLOW.Texture({url: './img/world/grass/clover_big_diffuse.jpg'}),
+		tNormal: new GLOW.Texture({url: './img/world/grass/clover_big_normal.jpg'}),
+		tSpecular: new GLOW.Texture({url: './img/world/grass/clover_big_spec.jpg'}),
+		tAO: new GLOW.Texture({url: './img/world/grass/clover_big_ao.jpg'}),
+	};
+
 	// TODO:
 	// Generate heightmaps
 

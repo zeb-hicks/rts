@@ -16,6 +16,9 @@ function drawSetup() {
 			cameraProjection: GLOW.defaultCamera.projection,
 
 			tDiffuse: new GLOW.Texture({url: './img/world/grass/clover_big_diffuse.jpg'}),
+			tNormal: new GLOW.Texture({url: './img/world/grass/clover_big_normal.jpg'}),
+			tSpecular: new GLOW.Texture({url: './img/world/grass/clover_big_spec.jpg'}),
+			tAO: new GLOW.Texture({url: './img/world/grass/clover_big_ao.jpg'}),
 
 			vertices: GLOW.Geometry.Cube.vertices(100),
 			bary: GLOW.Geometry.Cube.bary(),
