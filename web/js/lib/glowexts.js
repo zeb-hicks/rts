@@ -321,6 +321,117 @@ GLOW.Vector2 = (function() {
     return vector2;
 })();
 
+GLOW.Vector2Array = (function() {
+
+    "use strict"; "use restrict";
+
+    function vector2array(arr) {
+        var a = [];
+        a.length = arr.length * 2;
+        for (var i=0;i<arr.length;i++) {
+            a[i*2] = arr[i].x;
+            a[i*2+1] = arr[i].y;
+        }
+        this.value = new Float32Array(a);
+    };
+
+    vector2array.prototype = {
+        item: function(i,v) {
+            if (v !== undefined) {
+                if (v === null) {
+                    this.value[i*2] = v.x;
+                    this.value[i*2+1] = v.y;
+                } else {
+                    this.value[i*2] = 0;
+                    this.value[i*2+1] = 0;
+                }
+            } else {
+                return new GLOW.Vector2(this.value[i*2], this.value[i*2+1]);
+            }
+        }
+    };
+
+    return vector2array;
+
+})();
+
+GLOW.Vector3Array = (function() {
+
+    "use strict"; "use restrict";
+
+    function vector3array(arr) {
+        var a = [];
+        a.length = arr.length * 3;
+        for (var i=0;i<arr.length;i++) {
+            a[i*3] = arr[i].x;
+            a[i*3+1] = arr[i].y;
+            a[i*3+2] = arr[i].z;
+        }
+        this.value = new Float32Array(a);
+    };
+
+    vector3array.prototype = {
+        item: function(i,v) {
+            if (v !== undefined) {
+                if (v === null) {
+                    this.value[i*3] = v.x;
+                    this.value[i*3+1] = v.y;
+                    this.value[i*3+2] = v.z;
+                } else {
+                    this.value[i*3] = 0;
+                    this.value[i*3+1] = 0;
+                    this.value[i*3+2] = 0;
+                }
+            } else {
+                return new GLOW.Vector3(this.value[i*3], this.value[i*3+1], this.value[i*3+2]);
+            }
+        }
+    };
+
+    return vector3array;
+
+})();
+
+GLOW.Vector4Array = (function() {
+
+    "use strict"; "use restrict";
+
+    function vector4array(arr) {
+        var a = [];
+        a.length = arr.length * 4;
+        for (var i=0;i<arr.length;i++) {
+            a[i*4] = arr[i].x;
+            a[i*4+1] = arr[i].y;
+            a[i*4+2] = arr[i].z;
+            a[i*4+3] = arr[i].w;
+        }
+        this.value = new Float32Array(a);
+    };
+
+    vector4array.prototype = {
+        item: function(i,v) {
+            if (v !== undefined) {
+                if (v === null) {
+                    this.value[i*4] = v.x;
+                    this.value[i*4+1] = v.y;
+                    this.value[i*4+2] = v.z;
+                    this.value[i*4+3] = v.w;
+                } else {
+                    this.value[i*4] = 0;
+                    this.value[i*4+1] = 0;
+                    this.value[i*4+2] = 0;
+                    this.value[i*4+3] = 0;
+                }
+            } else {
+                return new GLOW.Vector4(this.value[i*4], this.value[i*4+1], this.value[i*4+2], this.value[i*4+3]);
+            }
+        }
+    };
+
+    return vector4array;
+
+})();
+
 /**
  * GLOW.Vector3 Based upon THREE.Vector3 by
  * @author mr.doob / http://mrdoob.com/
@@ -1477,6 +1588,98 @@ GLOW.Geometry = {
 
         return normals;
     },
+
+    faceTangents: function( vertices, elements, normals, uvs ) {
+        var tan1 = [], tan2 = [];
+        var i, il, w;
+        var vA = new GLOW.Vector3(), vB = new GLOW.Vector3(), vC = new GLOW.Vector3();
+        var uvAx, uvAy, uvBx, uvBy, uvCx, uvCy;
+        var s1, s2, t1, t2, r;
+        var sdir = new GLOW.Vector3(), tdir = new GLOW.Vector3();
+        var tmp = new GLOW.Vector3(), tmp2 = new GLOW.Vector3();
+        var n = new GLOW.Vector3(), t;
+        var tangents = [];
+
+        var tricount = elements.length / 3;
+
+        for (i = 0, il = elements.length; i < il; i++) {
+            tan1[i] = new GLOW.Vector3();
+            tan2[i] = new GLOW.Vector3();
+        }
+
+        function doTri(vertices, ix) {
+            // console.log('Doing tri with id ' + ix + ' considering vertices ' + elements[ix*3+0] + ', ' + elements[ix*3+1] + ', ' + elements[ix*3+2]);
+            vA.set(vertices[elements[ix*3+0]*3+0], vertices[elements[ix*3+0]*3+1], vertices[elements[ix*3+0]*3+2]);
+            vB.set(vertices[elements[ix*3+1]*3+0], vertices[elements[ix*3+1]*3+1], vertices[elements[ix*3+1]*3+2]);
+            vC.set(vertices[elements[ix*3+2]*3+0], vertices[elements[ix*3+2]*3+1], vertices[elements[ix*3+2]*3+2]);
+
+            uvAx = uvs[elements[ix*3+0]*2+0];
+            uvAy = uvs[elements[ix*3+0]*2+1];
+            uvBx = uvs[elements[ix*3+1]*2+0];
+            uvBy = uvs[elements[ix*3+1]*2+1];
+            uvCx = uvs[elements[ix*3+2]*2+0];
+            uvCy = uvs[elements[ix*3+2]*2+1];
+
+            // console.log('uv sets are ' + uvAx + ',' + uvAy + ' / ' + uvBx + ',' + uvBy + ' / ' + uvCx + ',' + uvCy);
+
+            x1 = vB.x - vA.x;
+            x2 = vC.x - vA.x;
+            y1 = vB.y - vA.y;
+            y2 = vC.y - vA.y;
+            z1 = vB.z - vA.z;
+            z2 = vC.z - vA.z;
+
+            s1 = uvBx - uvAx;
+            s2 = uvCx - uvAx;
+            t1 = uvBy - uvAy;
+            t2 = uvCy - uvAy;
+
+            // console.log('Temp vals ' + x1 + ',' + x2 + ',' + y1 + ',' + y2 + ',' + z1 + ',' + z2 + ' / ' + s1 + ',' + t1 + ',' + s2 + ',' + t2);
+
+            r =  1 / (s1 * t2 - s2 * t1);
+            sdir.set((t2 * x1 - t1 * x2) * r,
+                     (t2 * y1 - t1 * y2) * r,
+                     (t2 * z1 - t1 * z2) * r);
+            tdir.set((s1 * x2 - s2 * x1) * r,
+                     (s1 * y2 - s2 * y1) * r,
+                     (s1 * z2 - s2 * z1) * r);
+
+            // console.log('R is ' + r + ' and sdir/tdir: ' + sdir.x + ',' + sdir.y + ',' + sdir.z + ' / ' + tdir.x + ',' + tdir.y + ',' + tdir.z);
+
+            tan1[elements[ix*3+0]].addSelf(sdir);
+            tan1[elements[ix*3+1]].addSelf(sdir);
+            tan1[elements[ix*3+2]].addSelf(sdir);
+
+            tan2[elements[ix*3+0]].addSelf(tdir);
+            tan2[elements[ix*3+1]].addSelf(tdir);
+            tan2[elements[ix*3+2]].addSelf(tdir);
+        }
+
+        for (i = 0; i < tricount; i++) {
+            doTri(vertices, i);
+        }
+
+        for ( i = 0; i < tricount; i++ ) {
+            for (v = 0; v < 3; v++) {
+
+                n.set(normals[elements[i*3+v]*3], normals[elements[i*3+v]*3+1], normals[elements[i*3+v]*3+2]);
+                t = tan1[elements[i*3+v]];
+                tmp.copy(t);
+                tmp.subSelf(n.multiplyScalar(n.dot(t))).normalize();
+
+                tmp2.cross(n, t);
+                w = tmp2.dot(tan2[elements[i*3+v]]) ? -1 : 1;
+
+                tangents[elements[i*3+v]] = new GLOW.Vector4(tmp.x, tmp.y, tmp.z, w);
+                // console.log('Creating tangents for triangle ' + i + ' with element ' + (i*3+v) + ' considering vertex id ' + elements[i*3+v]);
+                // console.log('tmp equates to ' + tmp.x + ',' + tmp.y + ',' + tmp.z);
+                // console.log(tan1);
+            }
+        }
+
+        // console.log(tangents);
+        return new GLOW.Vector4Array(tangents).value;
+    },
     
     /*
     * Flatshade a shader config object
@@ -1717,6 +1920,101 @@ GLOW.Geometry.Cube = {
 };
 
 
+GLOW.Geometry.Sphere = {
+
+    vertices: function( radius, segments ) {
+
+        // segments = (segments | 7) + 1;
+
+        var esegs = segments * 2;
+        var i, j, k, x, y, z;
+
+        var vertices = [];
+        var meridian = 0;
+
+        var mdelta = Math.PI / segments;
+
+        k = 0;
+        l = 0;
+
+        for (i = 1; i < segments; i++) {
+          for (j = 0; j < esegs; j++) {
+
+                k = Math.sin(mdelta * i);
+                x = Math.sin(mdelta * j) * radius * k;
+                y = Math.cos(mdelta * i) * radius;
+                z = Math.cos(mdelta * j) * radius * k;
+
+                x = x.toFixed(2);
+                y = y.toFixed(2);
+                z = z.toFixed(2);
+
+                vertices.push(x, y, z);
+
+            }
+        }
+
+        vertices.push(0, -radius, 0);
+        vertices.push(0, radius, 0);
+
+        return new Float32Array(vertices);
+
+    },
+
+    indices: function ( segments ) {
+
+        var i, j, k, k1, k2, k3, k4;
+
+        var esegs = segments * 2;
+
+        var indices = [];
+        var vlen = esegs * (segments - 1) + 2;
+
+        // Top cap
+        for (j = 0; j < esegs; j++) {
+            k1 = vlen - 1;
+            k2 = j;
+            k3 = (j + 1) % esegs;
+            indices.push(k1, k2, k3);
+        }
+
+        // Equatorial tesselations
+        for (i = 0; i < segments - 2; i++) {
+            for (j = 0; j < esegs; j++) {
+                k = esegs * i;
+                k1 = j + k;
+                k2 = j + 1 + k;
+                k3 = j + k + esegs;
+                k4 = j + 1 + k + esegs;
+                if (j == esegs - 1) {
+                    k2 -= esegs;
+                    k4 -= esegs;
+                }
+                indices.push(k1, k3, k2);
+                indices.push(k2, k3, k4);
+            }
+        }
+
+        // Bottom cap
+        for (j = 0; j < esegs; j++) {
+            k = esegs * (segments - 2);
+            k1 = j + k;
+            k2 = vlen - 2;
+            k3 = ((j + 1) % esegs) + k;
+            indices.push(k1, k2, k3);
+        }
+
+        return indices;
+
+    },
+
+    primitives: function() {
+        return GL.TRIANGLES;
+    }
+
+}
+
+
 GLOW.Geometry.Cylinder = {
     
     vertices: function( numSegs, topRad, botRad, height ) {
@@ -1930,9 +2228,9 @@ GLOW.Node = function( shader ) {
     this.rotationMatrix = new GLOW.Matrix3(); 
     
     this.useXYZStyleTransform = false;
-    this.position = { x: 0, y: 0, z: 0 };
-    this.rotation = { x: 0, y: 0, z: 0 };
-    this.scale    = { x: 1, y: 1, z: 1 };
+    this.position = new GLOW.Vector3(0, 0, 0);
+    this.rotation = new GLOW.Vector3(0, 0, 0);
+    this.scale    = new GLOW.Vector3(1, 1, 1);
 
     this.children = [];
     this.parent   = undefined;
