@@ -21,9 +21,21 @@ function drawSetup() {
 		primitives: GLOW.Geometry.Sphere.primitives()
 	};
 
-	var lps = new GLOW.Shader(lightProxy);
+	var lightProxy2 = {
+		vertexShader: loadFile('./gpu/white.vs'),
+		fragmentShader: loadFile('./gpu/white.fs'),
+		data: {
+			transform: new GLOW.Matrix4(),
+			cameraInverse: GLOW.defaultCamera.inverse,
+			cameraProjection: GLOW.defaultCamera.projection,
+			vertices: GLOW.Geometry.Sphere.vertices(1, 16)
+		},
+		indices: GLOW.Geometry.Sphere.indices(16),
+		primitives: GLOW.Geometry.Sphere.primitives()
+	};
 
-	world.space.local.addChild(lps);
+	var lps = new GLOW.Shader(lightProxy);
+	var lps2 = new GLOW.Shader(lightProxy2);
 
 	lps.update = function(dt) {
 		var x, y, z, r, a;
@@ -37,6 +49,21 @@ function drawSetup() {
 
 		this.transform.setPosition(x, y, z);
 	};
+	lps2.update = function(dt) {
+		var x, y, z, r, a;
+
+		a = (Date.now() % 8000) / 4000 * Math.PI;
+		r = 100;
+
+		x = Math.sin(a) * r;
+		z = 0;
+		y = Math.cos(a) * r;
+
+		this.transform.setPosition(x, y, z);
+	};
+
+	world.space.local.addChild(lps);
+	world.space.local.addChild(lps2);
 
 	// var tex = 'test/test';
 	// var tex = 'grass/clover_big';
@@ -54,9 +81,12 @@ function drawSetup() {
 			cameraProjection: GLOW.defaultCamera.projection,
 			cameraPosition: GLOW.defaultCamera.position,
 
-			lightPos: new GLOW.Vector3Array([new GLOW.Vector3(), new GLOW.Vector3(100, 100, 100), new GLOW.Vector3(), new GLOW.Vector3(), new GLOW.Vector3(), new GLOW.Vector3(), new GLOW.Vector3(), new GLOW.Vector3()]),
-			lightData: new GLOW.Vector4Array([new GLOW.Vector4(1.0, 1.0, 1.0, 5), new GLOW.Vector4(1.0, 1.0, 1.0, 100), new GLOW.Vector4(), new GLOW.Vector4(), new GLOW.Vector4(), new GLOW.Vector4(), new GLOW.Vector4(), new GLOW.Vector4()]),
-			lightInfo: new GLOW.Vector2Array([new GLOW.Vector2(1, 0), new GLOW.Vector2(2, 1), new GLOW.Vector2(), new GLOW.Vector2(), new GLOW.Vector2(), new GLOW.Vector2(), new GLOW.Vector2(), new GLOW.Vector2()]),
+			lightPos: new GLOW.Vector3Array([new GLOW.Vector3(), new GLOW.Vector3(100, 100, 100), new GLOW.Vector3(100, 100, 100), new GLOW.Vector3(), new GLOW.Vector3(), new GLOW.Vector3(), new GLOW.Vector3(), new GLOW.Vector3()]),
+			lightData: new GLOW.Vector4Array([new GLOW.Vector4(1.0, 1.0, 1.0, 5), new GLOW.Vector4(1.0, 0.0, 0.0, 100), new GLOW.Vector4(0.0, 1.0, 1.0, 100), new GLOW.Vector4(), new GLOW.Vector4(), new GLOW.Vector4(), new GLOW.Vector4(), new GLOW.Vector4()]),
+			lightInfo: new GLOW.Vector2Array([new GLOW.Vector2(1, 0), new GLOW.Vector2(2, 1), new GLOW.Vector2(2, 1), new GLOW.Vector2(), new GLOW.Vector2(), new GLOW.Vector2(), new GLOW.Vector2(), new GLOW.Vector2()]),
+			// lightPos: new GLOW.Vector3Array([new GLOW.Vector3(), new GLOW.Vector3(100, 100, 100), new GLOW.Vector3(), new GLOW.Vector3(), new GLOW.Vector3(), new GLOW.Vector3(), new GLOW.Vector3(), new GLOW.Vector3()]),
+			// lightData: new GLOW.Vector4Array([new GLOW.Vector4(1.0, 1.0, 1.0, 5), new GLOW.Vector4(1.0, 1.0, 1.0, 100), new GLOW.Vector4(), new GLOW.Vector4(), new GLOW.Vector4(), new GLOW.Vector4(), new GLOW.Vector4(), new GLOW.Vector4()]),
+			// lightInfo: new GLOW.Vector2Array([new GLOW.Vector2(1, 0), new GLOW.Vector2(2, 1), new GLOW.Vector2(), new GLOW.Vector2(), new GLOW.Vector2(), new GLOW.Vector2(), new GLOW.Vector2(), new GLOW.Vector2()]),
 
 			parallaxAmount: new GLOW.Float(0.075),
 
@@ -82,9 +112,13 @@ function drawSetup() {
 
 	shader.update = function(dt) {
 		var pos = lps.transform.getPosition();
+		var pos2 = lps2.transform.getPosition();
 		this.lightPos.value[3] = pos.x;
 		this.lightPos.value[4] = pos.y;
 		this.lightPos.value[5] = pos.z;
+		this.lightPos.value[6] = pos2.x;
+		this.lightPos.value[7] = pos2.y;
+		this.lightPos.value[8] = pos2.z;
 		// this.transform.setRotation(my * 3, mx * 3, 0);
 		// this.transform.addRotation(dt * 0.1, dt * 0.5, dt * 0.3);
 		// var x, y, z, r, a;
@@ -125,15 +159,20 @@ function draw(dt) {
 	g.cache.clear();
 	g.clear();
 
-	var x, y, z, r, a;
+	var x, y, z, r, a1, a2;
 	a = (Date.now() % 40000) / 20000 * Math.PI;
-	r = 200;
-	x = Math.cos(a) * r;
-	z = Math.sin(a) * r;
-	y = 0;
-	// GLOW.defaultCamera.position.set(x, y, z);
+
+	// a = mx * Math.PI;
+	a1 = mx * Math.PI;
+	a2 = my * Math.PI / 2;
+
+	r = 300;
+	x = Math.cos(a1) * r * Math.cos(a2);
+	z = Math.sin(a1) * r * Math.cos(a2);
+	y = Math.sin(a2) * r;
 	GLOW.defaultCamera.target.set(0, 0, 0);
 	GLOW.defaultCamera.localMatrix.setPosition(x, y, z);
+	GLOW.defaultCamera.position.set(x, y, z);
 	GLOW.defaultCamera.update();
 	// GLOW.defaultCamera.localMatrix.makeInverse(this.transform, this.transformInverse);
 

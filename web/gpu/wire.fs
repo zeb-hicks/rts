@@ -130,7 +130,7 @@ vec3 calcLight(vec3 n, vec2 uv) {
 			const float shadowSamples = 64.0;
 			const float stepDist = 1.0 / shadowSamples;
 
-			vec2 delta = vec2(light_vector.x, light_vector.y) * parallaxAmount / light_vector.z * stepDist;
+			vec2 delta = -vec2(-light_vector.x, light_vector.y) * parallaxAmount / light_vector.z * stepDist;
 
 			vec2 shadowOffset = uv;
 			float shadowValue = 0.0;
@@ -144,7 +144,7 @@ vec3 calcLight(vec3 n, vec2 uv) {
 						shadowOffset += delta;
 						diff = height - texture2D(tHeight, shadowOffset).x;
 						if (diff < 0.0) {
-							shadowValue += diff * -8.0;
+							shadowValue -= diff * 4.0;
 						}
 					} else {
 						break;
@@ -155,7 +155,7 @@ vec3 calcLight(vec3 n, vec2 uv) {
 			}
 
 			// gl_FragColor = vec4(vec3(1.0) * shadowValue, 1.0);
-			light += lightData[li].xyz * max(0.0, dot(light_vector, norm)) * (1.0 - shadowValue);
+			light += lightData[li].xyz * max(0.0, dot(light_vector, norm)) * (1.0 - min(1.0, shadowValue));
 
 		}
 
