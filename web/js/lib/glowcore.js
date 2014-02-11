@@ -365,17 +365,18 @@ GLOW.Context = (function() {
     };
     
     GLOWContext.prototype.enableExtension = function( extensionName ) {
-        var availableExtensions = GL.getSupportedExtensions();
-        for( var a = 0, al = availableExtensions.length; a < al; a++ ) {
-            if( extensionName.toLowerCase() === availableExtensions[ a ].toLowerCase())
-                break;
-        }
+        return GL.getExtension(extensionName);
+        // var availableExtensions = GL.getSupportedExtensions();
+        // for( var a = 0, al = availableExtensions.length; a < al; a++ ) {
+        //     if( extensionName.toLowerCase() === availableExtensions[ a ].toLowerCase())
+        //         break;
+        // }
                 
-        if( a !== al ) {
-            return GL.getExtension( availableExtensions[ a ] );
-        } else {
-            return undefined;
-        }
+        // if( a !== al ) {
+        //     return GL.getExtension( availableExtensions[ a ] );
+        // } else {
+        //     return undefined;
+        // }
     };
     
     GLOWContext.prototype.getParameter = function( parameter ) {

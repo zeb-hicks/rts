@@ -1,7 +1,6 @@
 precision highp float;
 
 #extension GL_OES_standard_derivatives : enable
-#extension GL_OES_texture_float : enable
 #extension GL_OES_texture_float_linear : enable
 
 const int LIGHT_COUNT = 8; // Need to inject this depending on GPU caps, rather than hard coded.
@@ -47,7 +46,7 @@ vec2 parallaxOffset(vec2 uv) {
 	// vec3 tsE = normalize(-tsEyePos);
 	// vec3 tsE = normalize(vec3(0.03, 0.01, 0.01));
 
-	const float numSteps = 128.0;
+	const float numSteps = 48.0;
 	const float stepDist = 1.0 / numSteps;
 
 	vec2 delta = vec2(-tsE.x, tsE.y) * parallaxAmount / tsE.z * stepDist;
@@ -94,18 +93,20 @@ vec3 calcLight(vec3 n, vec2 uv) {
 
 		if (lightInfo[li].x == 1.0) { // Ambient light.
 
-			light += lightData[li].xyz * lightData[li].w * 0.02 * aoMap;
+			light += lightData[li].xyz * lightData[li].w * aoMap;
 
 		}
 
 		if (lightInfo[li].x == 2.0) { // Point light.
 			tsLightPos = lightPos[li].xyz * TBN;
 			light_vector = normalize(tsLightPos - tsWorldPos);
+			// light_vector.x *= -1.0;
 		}
 
 		if (lightInfo[li].x == 3.0) { // Directional light.
 			tsLightPos = lightPos[li].xyz * TBN;
 			light_vector = normalize(tsLightPos);
+			// light_vector.x *= -1.0;
 		}
 
 		if (lightInfo[li].x == 2.0 || lightInfo[li].x == 3.0) { // Directional light.
@@ -115,7 +116,7 @@ vec3 calcLight(vec3 n, vec2 uv) {
 
 			vec3 hvec = normalize(light_vector + view_vector);
 
-			const float shadowSamples = 64.0;
+			const float shadowSamples = 24.0;
 			const float stepDist = 1.0 / shadowSamples;
 
 			vec2 delta = -vec2(-light_vector.x, light_vector.y) * parallaxAmount / light_vector.z * stepDist;
@@ -142,7 +143,7 @@ vec3 calcLight(vec3 n, vec2 uv) {
 
 			// gl_FragColor = vec4(vec3(1.0) * shadowValue, 1.0);
 			light += lightData[li].w * lightData[li].xyz * max(0.0, dot(light_vector, norm)) * (1.0 - min(1.0, shadowValue));
-			light += lightData[li].w * lightData[li].xyz * pow(dot(hvec, normalize(norm)), 512.0) * texture2D(tSpecular, uv).xyz;
+			light += lightData[li].w * lightData[li].xyz * pow(max(0.0, dot(hvec, normalize(norm))), 512.0) * texture2D(tSpecular, uv).xyz;
 		}
 
 		if (lightInfo[li].x == 4.0) { // Spot light.
@@ -161,7 +162,7 @@ void main() {
 
 	vec3 C; // Output color.
 	vec3 D = diffuseMap(pxuv); // Diffuse
-	vec3 N = (texture2D(tNormal, pxuv).xyz * 2.0 - 1.0); // Normal
+	vec3 N = normalize(texture2D(tNormal, pxuv).xyz * 2.0 - 1.0); // Normal
 	vec3 L = calcLight(N, pxuv); // Lighting
 
 	C = D * L;

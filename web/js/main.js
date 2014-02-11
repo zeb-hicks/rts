@@ -28,6 +28,8 @@ function loadNext(list, cb) {
 function loadFile(f) {
 	var xhr = new XMLHttpRequest();
 	xhr.open('GET', f, false);
+	xhr.setRequestHeader('Cache-Control','no-cache,max-age=0');
+	xhr.setRequestHeader('Pragma','no-cache');
 	xhr.send(null);
 	return xhr.responseText;
 }

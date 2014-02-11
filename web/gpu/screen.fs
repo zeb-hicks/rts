@@ -1,3 +1,7 @@
+precision highp float;
+#extension GL_OES_texture_float : enable
+#extension GL_OES_texture_float_linear : enable
+
 uniform sampler2D diffuse;
 uniform sampler2D diffmip;
 uniform float exposure;

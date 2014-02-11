@@ -15,7 +15,7 @@ void main() {
 	C = texture2D(diffuse, uv).xyz;
 	M = texture2D(diffmip, uv).xyz;
 	B = texture2D(diffblur, uv).xyz;
-	vec3 bloom = pow(B - vec3(0.9), vec3(3.0));
+	vec3 bloom = max(vec3(0.0), pow((B - vec3(0.2)) * exposure, vec3(3.0)));
 
-	gl_FragColor = vec4(C, 1.0);
+	gl_FragColor = vec4(max(vec3(0.0), C * exposure) + bloom, 1.0);
 }

@@ -9,14 +9,20 @@ function drawSetup() {
 	g.enableExtension('OES_standard_derivatives');
 	g.enableExtension('OES_texture_float');
 	g.enableExtension('OES_texture_float_linear');
+	g.enableExtension('OES_texture_float_half_linear');
 
 	var hw = Math.floor(g.width / 4);
 	var hh = Math.floor(g.height / 4);
 
+	// hw = 256;
+	// hh = 256;
+
 	g.buffers = {
-		diffuse: new GLOW.FBO({ type: GL.FLOAT, filter: GL.NEAREST, depth: false, stencil: false }),
-		diffmip: new GLOW.FBO({ type: GL.FLOAT, filter: GL.NEAREST, width: hw, height: hh, depth: false, stencil: false }),
-		diffblur: new GLOW.FBO({ type: GL.FLOAT, filter: GL.NEAREST, width: hw, height: hh, depth: false, stencil: false })
+		diffuse: new GLOW.FBO({ type: GL.FLOAT, filter: GL.NEAREST, depth: true, stencil: false }),
+		diffmip: new GLOW.FBO({ type: GL.FLOAT, filter: GL.NEAREST, width: hw, height: hh, depth: true, stencil: false }),
+		diffblur: new GLOW.FBO({ type: GL.FLOAT, filter: GL.LINEAR, width: hw, height: hh, depth: true, stencil: false }),
+		store: new GLOW.FBO({ type: GL.FLOAT, filter: GL.NEAREST, depth: true, stencil: false }),
+		storeh: new GLOW.FBO({ type: GL.FLOAT, filter: GL.NEAREST, width: hw, height: hh, depth: true, stencil: false })
 	};
 	g.bufferScale = {
 		diffuse: 1,
@@ -25,10 +31,11 @@ function drawSetup() {
 	};
 	g.post = {
 		copy: new GLOW.Shader({
-			vertexShader: loadFile('./gpu/screen.vs'),
+			vertexShader: loadFile('./gpu/copy.vs'),
 			fragmentShader: loadFile('./gpu/copy.fs'),
 			data: {
 				map: g.buffers.diffuse,
+				region: new GLOW.Vector4(-1, -1, 1, 1),
 				vertices: GLOW.Geometry.Plane.vertices(1),
 				uvs: GLOW.Geometry.Plane.uvs()
 			},
@@ -40,7 +47,7 @@ function drawSetup() {
 			fragmentShader: loadFile('./gpu/blur.fs'),
 			data: {
 				map: g.buffers.diffuse,
-				res: new GLOW.Vector2(g.width, g.height),
+				res: new GLOW.Vector2(hw, hh),
 				pass: new GLOW.Int(0),
 				vertices: GLOW.Geometry.Plane.vertices(1),
 				uvs: GLOW.Geometry.Plane.uvs()
@@ -54,8 +61,8 @@ function drawSetup() {
 			data: {
 				diffuse: g.buffers.diffuse,
 				diffmip: g.buffers.diffmip,
-				diffblur: g.buffers.diffblur,
-				exposure: new GLOW.Float(0),
+				diffblur: g.buffers.linear,
+				exposure: new GLOW.Float(1),
 				vertices: GLOW.Geometry.Plane.vertices(1),
 				uvs: GLOW.Geometry.Plane.uvs()
 			},
@@ -126,6 +133,7 @@ function drawSetup() {
 		z = Math.cos(a) * r * 0.8;
 
 		this.transform.setPosition(x, y, z);
+		g.cache.invalidateUniform(this.uniforms.transform);
 	};
 	lps2.update = function(dt) {
 		var x, y, z, r, a;
@@ -138,10 +146,11 @@ function drawSetup() {
 		// y = Math.cos(a) * r;
 
 		x = r;
-		y = Math.sin(a) * r * 0.8;
-		z = Math.cos(a) * r * 0.8;
+		y = Math.sin(a) * r * 1.1;
+		z = Math.cos(a) * r * 1.1;
 
 		this.transform.setPosition(x, y, z);
+		g.cache.invalidateUniform(this.uniforms.transform);
 	};
 	lps3.update = function(dt) {
 		var x, y, z, r, a;
@@ -154,10 +163,11 @@ function drawSetup() {
 		// y = Math.cos(a) * r;
 
 		x = r;
-		y = Math.sin(a) * r * 0.8;
-		z = Math.cos(a) * r * 0.8;
+		y = Math.sin(a) * r * 1.4;
+		z = Math.cos(a) * r * 1.4;
 
 		this.transform.setPosition(x, y, z);
+		g.cache.invalidateUniform(this.uniforms.transform);
 	};
 
 	world.space.local.addChild(lps);
@@ -191,7 +201,7 @@ function drawSetup() {
 			cameraPosition: GLOW.defaultCamera.position,
 
 			lightPos: new GLOW.Vector3Array([new GLOW.Vector3(), new GLOW.Vector3(100, 100, 100), new GLOW.Vector3(100, 100, 100), new GLOW.Vector3(100, 100, 100), new GLOW.Vector3(), new GLOW.Vector3(), new GLOW.Vector3(), new GLOW.Vector3()]),
-			lightData: new GLOW.Vector4Array([new GLOW.Vector4(1, 1, 1, 1), new GLOW.Vector4(1, 1, 1, 20), new GLOW.Vector4(1, 1, 1, 10), new GLOW.Vector4(1, 1, 1, 10), new GLOW.Vector4(), new GLOW.Vector4(), new GLOW.Vector4(), new GLOW.Vector4()]),
+			lightData: new GLOW.Vector4Array([new GLOW.Vector4(1, 1, 1, 0.1), new GLOW.Vector4(1, 1, 1, 3), new GLOW.Vector4(1, 1, 1, 2), new GLOW.Vector4(1, 1, 1, 2), new GLOW.Vector4(), new GLOW.Vector4(), new GLOW.Vector4(), new GLOW.Vector4()]),
 			lightInfo: new GLOW.Vector2Array([new GLOW.Vector2(1, 0), new GLOW.Vector2(2, 1), new GLOW.Vector2(2, 1), new GLOW.Vector2(2, 1), new GLOW.Vector2(), new GLOW.Vector2(), new GLOW.Vector2(), new GLOW.Vector2()]),
 
 			parallaxAmount: new GLOW.Float(0.075),
@@ -229,6 +239,8 @@ function drawSetup() {
 		this.lightPos.value[9] = pos3.x;
 		this.lightPos.value[10] = pos3.y;
 		this.lightPos.value[11] = pos3.z;
+		g.cache.invalidateUniform(this.uniforms.transform);
+		g.cache.invalidateUniform(this.uniforms.lightPos);
 		// this.transform.setRotation(my * 3, mx * 3, 0);
 		// this.transform.addRotation(dt * 0.1, dt * 0.5, dt * 0.3);
 		// var x, y, z, r, a;
@@ -291,37 +303,65 @@ function draw(dt) {
 	// GLOW.defaultCamera.localMatrix.makeInverse(this.transform, this.transformInverse);
 
 	g.buffers.diffuse.bind();
-	g.buffers.diffuse.clear();
-
+	g.clear();
 	drawNode(world.space.local);
+	g.buffers.diffuse.unbind();
 
+
+	g.post.copy.uniforms.map.data = g.buffers.diffuse;
+	g.post.copy.region.set(0, 0, 1, 1);
+	g.cache.invalidateUniform(g.post.copy.uniforms.map);
+	g.cache.invalidateUniform(g.post.copy.uniforms.region);
 
 	g.buffers.diffmip.bind();
-	g.buffers.diffmip.clear();
-
-	g.post.copy.map = g.buffers.diffuse;
+	g.clear();
 	g.post.copy.draw();
+	g.buffers.diffmip.unbind();
 
+
+
+
+	g.post.blur.uniforms.map.data = g.buffers.diffmip;
+	g.post.blur.pass.set(0);
+	g.cache.invalidateUniform(g.post.blur.uniforms.map);
+	g.cache.invalidateUniform(g.post.blur.uniforms.pass);
+
+	g.buffers.storeh.bind();
+	g.clear();
+	g.post.blur.draw();
+	g.buffers.storeh.unbind();
+
+	g.post.blur.uniforms.map.data = g.buffers.storeh;
+	g.post.blur.pass.set(1);
+	g.cache.invalidateUniform(g.post.blur.uniforms.map);
+	g.cache.invalidateUniform(g.post.blur.uniforms.pass);
 
 	g.buffers.diffblur.bind();
-	g.buffers.diffblur.clear();
-
-	g.post.blur.map = g.buffers.diffmip;
-	g.post.blur.pass = 0;
-	g.post.blur.draw();
-	g.post.blur.pass = 1;
-	g.post.blur.draw();
-
-
-	g.buffers.diffblur.unbind();
 	g.clear();
-	g.post.result.diffuse = g.buffers.diffuse;
-	g.post.result.diffmip = g.buffers.diffmip;
-	g.post.result.diffblur = g.buffers.diffblur;
-	g.post.result.draw();
+	g.post.blur.draw();
+	g.buffers.diffblur.unbind();
 
-	// drawNode(world.space.local);
-	// g.post.result.draw();
+
+
+	// g.post.copyl.uniforms.map.data = g.buffers.diffblur;
+	// g.post.copyl.region.set(0, 0, 1, 1);
+	// g.cache.invalidateUniform(g.post.copyl.uniforms.map);
+	// g.cache.invalidateUniform(g.post.copyl.uniforms.region);
+
+	// g.buffers.linear.bind();
+	// g.clear();
+	// g.post.copyl.draw();
+	// g.buffers.linear.unbind();
+
+
+
+	g.post.result.uniforms.diffuse.data = g.buffers.diffuse;
+	g.post.result.uniforms.diffmip.data = g.buffers.diffmip;
+	g.post.result.uniforms.diffblur.data = g.buffers.diffblur;
+	g.cache.invalidateUniform(g.post.result.uniforms.diffuse);
+	g.cache.invalidateUniform(g.post.result.uniforms.diffmip);
+	g.cache.invalidateUniform(g.post.result.uniforms.diffblur);
+	g.post.result.draw();
 
 }
 
