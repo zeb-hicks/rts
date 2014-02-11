@@ -1,6 +1,8 @@
 precision highp float;
 
 #extension GL_OES_standard_derivatives : enable
+#extension GL_OES_texture_float : enable
+#extension GL_OES_texture_float_linear : enable
 
 const int LIGHT_COUNT = 8; // Need to inject this depending on GPU caps, rather than hard coded.
 
@@ -35,31 +37,8 @@ float edgeFactor(){
     return min(min(a3.x, a3.y), a3.z);
 }
 
-mat3 TSN( vec3 eye_pos, vec3 surf_norm ) {
-
-	vec3 q0 = dFdx( eye_pos.xyz );
-	vec3 q1 = dFdy( eye_pos.xyz );
-	vec2 st0 = dFdx( uv.st );
-	vec2 st1 = dFdy( uv.st );
-
-	vec3 S = normalize(  q0 * st1.t - q1 * st0.t );
-	vec3 T = normalize( -q0 * st1.s + q1 * st0.s );
-	vec3 N = normalize( surf_norm );
-
-	return mat3( S, T, N );
-}
-
-vec3 perturbNormal2Arb( vec3 eye_pos, vec3 surf_norm, vec3 tex_norm ) {
-	return normalize( TSN(eye_pos, surf_norm) * tex_norm );
-}
-
 vec3 diffuseMap(vec2 uv) {
 	return texture2D(tDiffuse, uv).xyz; // Grab diffuse map texel for this fragment.
-}
-
-vec3 normalMap(vec3 fnorm, vec3 eye, vec2 uv) {
-	vec3 tn = normalize(texture2D(tNormal, uv).xyz * 2.0 - 1.0); // Get texture normal.
-	return normalize(perturbNormal2Arb(eye, fnorm, tn)); // Perturb normal as per matrices.
 }
 
 vec2 parallaxOffset(vec2 uv) {
@@ -68,7 +47,7 @@ vec2 parallaxOffset(vec2 uv) {
 	// vec3 tsE = normalize(-tsEyePos);
 	// vec3 tsE = normalize(vec3(0.03, 0.01, 0.01));
 
-	const float numSteps = 64.0;
+	const float numSteps = 128.0;
 	const float stepDist = 1.0 / numSteps;
 
 	vec2 delta = vec2(-tsE.x, tsE.y) * parallaxAmount / tsE.z * stepDist;
@@ -107,6 +86,8 @@ vec3 calcLight(vec3 n, vec2 uv) {
 	int brightindex = -1;
 	vec3 lightDir;
 	float lightDot;
+	vec3 tsLightPos;
+	vec3 light_vector;
 	// mat3 TBN = mat3(tangent, binormal, normal);
 
 	for (int li = 0; li < LIGHT_COUNT; li++) {
@@ -118,14 +99,21 @@ vec3 calcLight(vec3 n, vec2 uv) {
 		}
 
 		if (lightInfo[li].x == 2.0) { // Point light.
+			tsLightPos = lightPos[li].xyz * TBN;
+			light_vector = normalize(tsLightPos - tsWorldPos);
+		}
 
-			vec3 tsLightPos = lightPos[li].xyz * TBN;
-			vec3 norm = n;
+		if (lightInfo[li].x == 3.0) { // Directional light.
+			tsLightPos = lightPos[li].xyz * TBN;
+			light_vector = normalize(tsLightPos);
+		}
 
-			vec3 light_vector = normalize(tsLightPos);
+		if (lightInfo[li].x == 2.0 || lightInfo[li].x == 3.0) { // Directional light.
+			vec3 norm = normalize(n);
+
 			vec3 view_vector = normalize(tsEyePos - tsWorldPos);
 
-
+			vec3 hvec = normalize(light_vector + view_vector);
 
 			const float shadowSamples = 64.0;
 			const float stepDist = 1.0 / shadowSamples;
@@ -150,17 +138,11 @@ vec3 calcLight(vec3 n, vec2 uv) {
 						break;
 					}
 				}
-			} else {
-
 			}
 
 			// gl_FragColor = vec4(vec3(1.0) * shadowValue, 1.0);
-			light += lightData[li].xyz * max(0.0, dot(light_vector, norm)) * (1.0 - min(1.0, shadowValue));
-
-		}
-
-		if (lightInfo[li].x == 3.0) { // Directional light.
-			
+			light += lightData[li].w * lightData[li].xyz * max(0.0, dot(light_vector, norm)) * (1.0 - min(1.0, shadowValue));
+			light += lightData[li].w * lightData[li].xyz * pow(dot(hvec, normalize(norm)), 512.0) * texture2D(tSpecular, uv).xyz;
 		}
 
 		if (lightInfo[li].x == 4.0) { // Spot light.
